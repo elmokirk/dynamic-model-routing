@@ -1,0 +1,13 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "id": "dmr-model-router",
+        "type": "command",
+        "command": "node \"C:\\Users\\Kirk\\Documents\\DEV\\cc-dynamic-model-routing/dist/hook.js\"",
+        "async": false,
+        "description": "DMR: recommend model and effort before each turn"
+      }
+    ]
+  }
+}
