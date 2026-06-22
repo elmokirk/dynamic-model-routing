@@ -1,0 +1,12 @@
+{
+  "name": "dynamic-model-routing",
+  "version": "0.1.0",
+  "description": "Recommend or auto-select the best Claude model and effort level for every prompt",
+  "author": { "name": "Kirk", "email": "kimoki.kk@gmail.com" },
+  "homepage": "https://github.com/kirk/cc-dynamic-model-routing",
+  "repository": "https://github.com/kirk/cc-dynamic-model-routing",
+  "license": "MIT",
+  "keywords": ["routing", "model-selection", "productivity", "haiku", "sonnet", "opus"],
+  "commands": ["./commands/"],
+  "skills": ["./skills/"]
+}
