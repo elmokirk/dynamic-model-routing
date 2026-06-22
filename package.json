@@ -1,6 +1,6 @@
 {
   "name": "cc-dynamic-model-routing",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "description": "Dynamic Model Routing plugin for Claude Code",
   "type": "module",
   "bin": { "dmr": "./dist/cli.js" },

@@ -1,12 +1,12 @@
 {
   "name": "dynamic-model-routing",
-  "version": "0.1.0",
-  "description": "Recommend or auto-select the best Claude model and effort level for every prompt",
+  "version": "0.3.0",
+  "description": "Recommend or auto-select the best model tier (low/mid/high/max) for every prompt — zero API calls, ~7µs per decision. Works with Claude Code, Codex CLI, OpenCode, and Ollama.",
   "author": { "name": "Kirk", "email": "kimoki.kk@gmail.com" },
-  "homepage": "https://github.com/kirk/cc-dynamic-model-routing",
-  "repository": "https://github.com/kirk/cc-dynamic-model-routing",
+  "homepage": "https://github.com/elmokirk/cc-dynamic-model-routing",
+  "repository": "https://github.com/elmokirk/cc-dynamic-model-routing",
   "license": "MIT",
-  "keywords": ["routing", "model-selection", "productivity", "haiku", "sonnet", "opus"],
+  "keywords": ["routing", "model-selection", "productivity", "cost-optimization", "codex", "ollama", "opencode"],
   "commands": ["./commands/"],
   "skills": ["./skills/"]
 }

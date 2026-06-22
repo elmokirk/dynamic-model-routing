@@ -2,16 +2,18 @@
 
 **Right model. Right effort. Every prompt.**
 
-DMR is a Claude Code plugin + CLI that automatically recommends or selects the best Claude model (`haiku` / `sonnet` / `opus`) and effort level for each prompt — using a zero-cost keyword router that runs in microseconds with no API calls.
+DMR is a multi-provider plugin + CLI that automatically routes each prompt to the right model tier (`low` / `mid` / `high` / `max`) using a zero-cost keyword scorer — no API calls, ~7 µs per decision.
+
+Works with **Claude Code**, **Codex CLI**, **OpenCode**, and **Ollama** (local + cloud).
 
 ```
 ╔═ DMR (confirm) ══════════════════════╗
-  Model:      opus (claude-opus-4-8)
+  Model:      high (claude-opus-4-8)
   Effort:     high
   Confidence: 95%
-  Reason:     matched 2 opus signal(s)
+  Reason:     matched 2 high signal(s)
 ╚═══════════════════════════════════════╝
-  [Enter] accept / h haiku / s sonnet / o opus / c cancel:
+  [Enter] accept / l low / m mid / h high / x max / c cancel:
 ```
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
@@ -24,56 +26,81 @@ DMR is a Claude Code plugin + CLI that automatically recommends or selects the b
 
 ## Why DMR?
 
-Choosing the wrong Claude model is a quiet tax on every coding session:
+Choosing the wrong model is a quiet tax on every coding session:
 
-- Sending architecture questions to **Haiku** → shallow answers, re-prompting, wasted time
-- Sending rename tasks to **Opus** → burning tokens and budget on trivial work
+- Sending architecture questions to a **low** tier model → shallow answers, re-prompting, wasted time
+- Sending rename tasks to a **high** tier model → burning tokens and budget on trivial work
 - Manually picking a model every session → cognitive overhead, inconsistency
 
 DMR eliminates that decision. It fires before every prompt, scores the task, and either shows a recommendation (Confirm Mode) or applies the choice automatically (Auto Mode).
 
 ---
 
+## Model Tiers
+
+Provider-agnostic tier names map to the best concrete model per provider:
+
+| DMR Tier | Claude | Codex CLI | OpenAI API | Ollama (24GB) | Ollama Cloud |
+|----------|--------|-----------|------------|---------------|--------------|
+| `low` | claude-haiku | gpt-5.4-mini | gpt-4.1-mini | qwen2.5-coder:7b | deepseek-v4-flash:cloud |
+| `mid` | claude-sonnet | gpt-5.4 | gpt-4.1 | qwen2.5-coder:32b | minimax-m3:cloud |
+| `high` | claude-opus | gpt-5.5 | o4-mini | qwen3-coder:30b | kimi-k2.6:cloud |
+| `max` *(opt-in)* | claude-opus | gpt-5.5 | o3 | deepseek-v4-pro:cloud | deepseek-v4-pro:cloud |
+
+---
+
 ## Features
 
 - **Zero-cost routing** — pure keyword scorer, no API calls, no latency on the critical path
-- **~51 token overhead** per turn — negligible against Claude's 200K context
+- **~51 token overhead** per turn — negligible against 200K context
 - **7 µs per decision** — invisible to the user
-- **100% accuracy** on a 30-prompt balanced corpus (haiku/sonnet/opus)
+- **100% accuracy** on a 30-prompt balanced corpus (low/mid/high)
+- **Four tiers**: low / mid / high / max (max is opt-in)
 - **Three modes**: confirm (interactive), auto (silent), off
 - **Session-scoped mode switching** — `dmr mode auto` only affects the current project session
 - **Three-level config**: user → project → local, later overrides earlier
-- **Optional LLM fallback** via Haiku for ambiguous prompts
-- **Marketplace-ready** Claude Code plugin (slash commands + UserPromptSubmit hook)
-- **CoWork compatible** — hook fires in collaborative Claude Code sessions
+- **Optional LLM fallback** for ambiguous prompts
+- **Tilde bypass** — prefix any prompt with `~` to skip routing for that turn
+- **Multi-provider**: Claude Code, Codex CLI, OpenCode (Anthropic / OpenAI / Ollama)
 
 ---
 
 ## Install
 
-### As a Claude Code plugin (recommended)
+### Claude Code (plugin marketplace)
 
 ```bash
-claude plugin install github:yourname/cc-dynamic-model-routing
+claude plugin install github:elmokirk/cc-dynamic-model-routing
 ```
 
 Then wire up the hook once per project (or globally):
 
 ```bash
-# inside Claude Code:
 /dmr install --project     # .claude/settings.json
 /dmr install --global      # ~/.claude/settings.json
 ```
 
-From that point on, DMR fires automatically on every prompt.
+### Codex CLI (plugin marketplace)
 
-### As a standalone CLI
+```bash
+codex plugin install github:elmokirk/cc-dynamic-model-routing
+```
+
+### OpenCode (local plugin)
+
+The `.opencode/plugins/dmr.ts` file is auto-discovered when you open the project in OpenCode. Set your provider:
+
+```bash
+export DMR_PROVIDER=anthropic   # default
+export DMR_PROVIDER=openai      # gpt-4.1 family
+export DMR_PROVIDER=ollama      # local or cloud Ollama models
+opencode
+```
+
+### Standalone CLI
 
 ```bash
 npm install -g cc-dynamic-model-routing
-```
-
-```bash
 dmr run "implement user authentication with JWT"
 ```
 
@@ -83,21 +110,21 @@ dmr run "implement user authentication with JWT"
 
 ### Confirm Mode (default)
 
-Shows the recommendation and waits for your input before starting Claude:
+Shows the recommendation and waits for your input before starting the model:
 
 ```
 $ dmr run "design the architecture for a multi-tenant SaaS platform"
 
-  Recommended: opus + high
+  Recommended: high + high
   Confidence:  95%
-  Reason:      matched 2 opus signal(s)
+  Reason:      matched 2 high signal(s)
 
-  [Enter] accept / h haiku / s sonnet / o opus / c cancel:
+  [Enter] accept / l low / m mid / h high / x max / c cancel:
 ```
 
 Keys:
-- **Enter** — accept the recommendation and launch Claude
-- **h / s / o** — override to haiku / sonnet / opus and launch
+- **Enter** — accept the recommendation and launch
+- **l / m / h / x** — override to low / mid / high / max and launch
 - **c** — cancel
 
 ### Auto Mode
@@ -110,27 +137,33 @@ dmr run "fix the null pointer exception in cart.ts"
 ```
 
 ```
-  Recommended: sonnet + medium
+  Recommended: mid + medium
   Confidence:  95%
-  Reason:      matched 1 sonnet signal(s)
+  Reason:      matched 1 mid signal(s)
 
 [DMR AUTO] Running: claude --model claude-sonnet-4-6 --effort medium "fix the null pointer exception in cart.ts"
 ```
 
-### In Claude Code (hook)
+### In Claude Code / Codex / OpenCode (hook)
 
-When the plugin hook is installed, DMR prints its recommendation **before every response**:
+DMR prints its recommendation **before every response**:
 
 ```
 ╔═ DMR (auto) ══════════════════════════╗
-  Model:      haiku (claude-haiku-4-5-20251001)
+  Model:      low (claude-haiku-4-5-20251001)
   Effort:     low
   Confidence: 95%
-  Reason:     matched 1 haiku signal(s)
+  Reason:     matched 1 low signal(s)
 ╚═══════════════════════════════════════╝
 ```
 
-You see the recommendation in the transcript. In Auto Mode, `effortLevel` is written to the session file before the turn proceeds.
+### Bypass routing for one turn
+
+```
+~ just explain what this function does
+```
+
+Prefix with `~` — DMR exits immediately, no recommendation shown.
 
 ### Switch mode for the current session
 
@@ -142,26 +175,16 @@ dmr mode off        # or: /dmr mode off
 
 Mode is stored in `.claude/dmr-session.json` and never touches `settings.json`.
 
-### Check current state
-
-```bash
-dmr status
-# [DMR] Mode: auto (config default: confirm)
-# [DMR] LLM fallback: false
-# [DMR] Write settings: false
-```
-
 ---
 
 ## Default Routing
 
-| Prompt type | Examples | Model | Effort |
-|-------------|----------|-------|--------|
-| Summaries, explanations, formatting | "summarize this", "explain briefly", "what is", "rename" | **haiku** | low |
-| Implementation, bugfixes, tests, refactors | "implement", "fix", "write tests", "refactor", "add feature" | **sonnet** | medium |
-| Architecture, strategy, complex debug, multi-file | "architecture", "system design", "complex debug", "at scale", "strategy" | **opus** | high |
-
-Customize routing rules per project — see [Configuration](#configuration).
+| Prompt type | Examples | Tier | Effort |
+|-------------|----------|------|--------|
+| Summaries, explanations, formatting | "summarize this", "explain briefly", "what is", "rename" | **low** | low |
+| Implementation, bugfixes, tests, refactors | "implement", "fix", "write tests", "refactor", "add feature" | **mid** | medium |
+| Architecture, strategy, complex debug, multi-file | "architecture", "system design", "complex debug", "at scale", "strategy" | **high** | high |
+| Security audits, full-codebase analysis *(opt-in)* | "security audit", "full codebase", "entire codebase" | **max** | max |
 
 ---
 
@@ -180,32 +203,48 @@ DMR merges config from three sources, in order (later wins):
 ```json
 {
   "mode": "confirm",
-  "defaultModel": "sonnet",
+  "defaultModel": "mid",
   "defaultEffort": "medium",
-  "allowedModels": ["haiku", "sonnet", "opus"],
+  "allowedModels": ["low", "mid", "high"],
   "autoModeMinConfidence": 0.75,
   "useLLMFallback": false,
-  "llmClassifierModel": "haiku",
+  "llmClassifierModel": "low",
   "showReason": true,
   "logDecisions": true,
   "writeClaudeSettings": false,
   "rules": {
-    "opus": {
+    "high": {
       "keywords": ["architecture", "strategy", "multi-file", "complex debug",
                    "system design", "refactor across", "ambiguous", "high-impact",
                    "at scale", "design a system", "design the system"],
       "effort": "high"
     },
-    "sonnet": {
+    "mid": {
       "keywords": ["implement", "fix", "test", "refactor", "component",
                    "bugfix", "add feature", "write"],
       "effort": "medium"
     },
-    "haiku": {
+    "low": {
       "keywords": ["summarize", "explain briefly", "format", "rename",
                    "simple", "what is", "what does", "list", "show me",
                    "what error", "error mean"],
       "effort": "low"
+    }
+  }
+}
+```
+
+### Enable the max tier
+
+Add `max` to `allowedModels` and provide keywords:
+
+```json
+{
+  "allowedModels": ["low", "mid", "high", "max"],
+  "rules": {
+    "max": {
+      "keywords": ["security audit", "full codebase", "entire codebase", "greenfield"],
+      "effort": "max"
     }
   }
 }
@@ -216,10 +255,9 @@ DMR merges config from three sources, in order (later wins):
 You only need to list additions — they deep-merge with the defaults:
 
 ```json
-// .claude/dynamic-model-routing.json
 {
   "rules": {
-    "opus": {
+    "high": {
       "keywords": ["payment-service", "billing refactor", "cross-region failover"]
     }
   }
@@ -230,7 +268,7 @@ You only need to list additions — they deep-merge with the defaults:
 
 Valid values: `low` · `medium` · `high` · `xhigh` · `max`
 
-Maps directly to Claude Code's `--effort` CLI flag.
+Maps directly to Claude Code's `--effort` CLI flag. Codex CLI and OpenCode/Ollama use model selection only (no effort flag).
 
 ---
 
@@ -240,10 +278,10 @@ Every routing decision returns:
 
 ```typescript
 interface Decision {
-  model: 'haiku' | 'sonnet' | 'opus'
+  model: 'low' | 'mid' | 'high' | 'max'
   effort: 'low' | 'medium' | 'high' | 'xhigh' | 'max'
   confidence: number    // 0.0 – 0.95
-  reason: string        // "matched 2 opus signal(s)"
+  reason: string        // "matched 2 high signal(s)"
   signals: string[]     // ["architecture", "system design"]
 }
 ```
@@ -257,9 +295,9 @@ Confidence below `autoModeMinConfidence` (default: 0.75) triggers the optional L
 The keyword router achieves **100% accuracy** on a 30-prompt balanced corpus with **7 µs** average decision time and **zero API calls**.
 
 ```
-  haiku    accuracy: ████████████████████  100%  (10/10)
-  sonnet   accuracy: ████████████████████  100%  (10/10)
-  opus     accuracy: ████████████████████  100%  (10/10)
+  low      accuracy: ████████████████████  100%  (10/10)
+  mid      accuracy: ████████████████████  100%  (10/10)
+  high     accuracy: ████████████████████  100%  (10/10)
 
   Avg hook output:    ~51 tokens per turn  ($0.00)
   Avg latency:        7µs per decision
@@ -276,11 +314,18 @@ Full methodology, corpus, tuning guide, and keyword router vs LLM fallback compa
 
 ---
 
+## Model Guides
+
+- **[docs/models-codex.md](./docs/models-codex.md)** — Codex CLI + OpenAI API model decision table, effort mapping, cost reference
+- **[docs/models-ollama.md](./docs/models-ollama.md)** — Top 5 Ollama cloud models (Feb–Jun 2026) + local models by VRAM tier (8/16/24/32GB)
+
+---
+
 ## Architecture
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│  Claude Code session                                │
+│  Claude Code / Codex / OpenCode session             │
 │                                                     │
 │  UserPromptSubmit hook fires                        │
 │       │                                             │
@@ -294,42 +339,29 @@ Full methodology, corpus, tuning guide, and keyword router vs LLM fallback compa
 │                │                                    │
 │                ▼ stdout (visible in transcript)      │
 │       ╔═ DMR (confirm) ════════════════╗            │
-│       ║  Model: sonnet · Effort: medium ║            │
+│       ║  Model: mid · Effort: medium   ║            │
 │       ╚════════════════════════════════╝            │
 │                                                     │
-│  Claude responds normally                           │
+│  Model responds normally                            │
 └─────────────────────────────────────────────────────┘
-
-┌────────────────────────────────────────────┐
-│  Terminal CLI                              │
-│                                            │
-│  dmr run "your prompt"                     │
-│       │                                    │
-│       ├── route(prompt, config)            │
-│       ├── Print recommendation             │
-│       │                                    │
-│       ├── [confirm mode] readline prompt   │
-│       │   h/s/o/Enter/c                    │
-│       │                                    │
-│       └── [auto mode] execSync(           │
-│               claude --model X --effort Y  │
-│               "your prompt"                │
-│           )                                │
-└────────────────────────────────────────────┘
 ```
 
 ### Source files
 
 | File | Responsibility |
 |------|---------------|
-| [`src/types.ts`](./src/types.ts) | All types, interfaces, and `DEFAULT_CONFIG` with keyword rules |
+| [`src/types.ts`](./src/types.ts) | All types, model ID maps (Claude/Codex/OpenAI/Ollama), `DEFAULT_CONFIG` |
 | [`src/router.ts`](./src/router.ts) | Keyword scorer → `Decision` object |
 | [`src/config.ts`](./src/config.ts) | 3-level config merge (user → project → local) |
 | [`src/session.ts`](./src/session.ts) | Read/write `.claude/dmr-session.json` |
-| [`src/hook.ts`](./src/hook.ts) | UserPromptSubmit hook entry — reads stdin JSON, prints box |
+| [`src/hook.ts`](./src/hook.ts) | Claude Code `UserPromptSubmit` hook entry |
+| [`src/codex-hook.ts`](./src/codex-hook.ts) | Codex CLI `UserPromptSubmit` hook entry |
+| [`src/opencode-plugin.ts`](./src/opencode-plugin.ts) | OpenCode `chat.params` plugin (Anthropic/OpenAI/Ollama) |
+| [`src/session-start.ts`](./src/session-start.ts) | Claude Code `SessionStart` — injects sub-agent routing rules |
+| [`src/codex-session-start.ts`](./src/codex-session-start.ts) | Codex `SessionStart` |
 | [`src/cli.ts`](./src/cli.ts) | CLI entry — `dmr run\|mode\|status\|install` |
-| [`src/installer.ts`](./src/installer.ts) | Writes hook entry into target `settings.json` |
-| [`src/classifier.ts`](./src/classifier.ts) | Optional Haiku LLM fallback (off by default) |
+| [`src/installer.ts`](./src/installer.ts) | Writes both hooks into target `settings.json` |
+| [`src/classifier.ts`](./src/classifier.ts) | Optional LLM fallback classifier (off by default) |
 
 ---
 
@@ -342,7 +374,7 @@ When installed as a Claude Code plugin, these slash commands are available:
 | `/dmr run <prompt>` | Route a prompt and show recommendation |
 | `/dmr mode confirm\|auto\|off` | Switch mode for this session |
 | `/dmr status` | Show current config and active mode |
-| `/dmr install --global\|--project\|--local` | Install the UserPromptSubmit hook |
+| `/dmr install --global\|--project\|--local` | Install both hooks into settings.json |
 
 ---
 
@@ -350,38 +382,39 @@ When installed as a Claude Code plugin, these slash commands are available:
 
 | Context | Status |
 |---------|--------|
-| Claude Code desktop (Mac / Windows) | ✅ Hook fires on every prompt |
+| Claude Code desktop (Mac / Windows) | ✅ Both hooks fire |
 | VS Code extension | ✅ |
 | JetBrains extension | ✅ |
 | CoWork app (Claude Code section) | ✅ |
+| Codex CLI | ✅ Both hooks fire |
+| OpenCode (Anthropic / OpenAI / Ollama) | ✅ `chat.params` plugin |
 | Terminal CLI (`dmr run`) | ✅ Full confirm/auto/cancel UX |
-| Cursor, Gemini CLI, other IDEs | ⚠️ Plugin structure present; hook not yet supported |
 
 ---
 
 ## Known Limitations
 
-**1. Hook confirm mode is advisory only in Claude Code.**
-The `UserPromptSubmit` hook cannot open an interactive prompt in Claude Code's UI. It prints the recommendation visibly, but the turn proceeds. For the full accept/change/cancel flow, use `dmr run` in the terminal.
+**1. Hook confirm mode is advisory only in Claude Code / Codex.**
+The `UserPromptSubmit` hook cannot open an interactive prompt inside the app UI. It prints the recommendation visibly, but the turn proceeds. For the full accept/change/cancel flow, use `dmr run` in the terminal.
 
 **2. Current-turn model cannot be switched by the hook.**
-The hook fires before Claude responds, but the model for that turn is already determined by your session's `--model` flag or settings. The hook recommends — it cannot override the running session's model. Use `--model` on the next invocation.
+The hook fires before the model responds, but the active model is already determined by your session's `--model` flag or settings. The hook recommends — it cannot override the running session. Use `--model` on the next invocation.
 
 **3. `writeClaudeSettings: true` writes `effortLevel` only.**
 This is the only documented, supported writable field in `settings.json`. No undocumented fields are written.
 
 **4. LLM fallback costs tokens.**
-When `useLLMFallback: true`, a Haiku API call fires for every prompt below the confidence threshold. ~$0.000025/call. Keep it off unless the keyword router is misrouting frequently for your team's prompt style.
+When `useLLMFallback: true`, a low-tier API call fires for every prompt below the confidence threshold. ~$0.000025/call. Keep it off unless the keyword router is misrouting frequently for your team's prompt style.
 
 **5. `claude auto-mode` is a different system.**
-Claude Code's built-in `auto-mode` (`claude auto-mode config`) classifies permission decisions (allow/soft_deny/hard_deny). DMR routes to the right model. They are complementary — neither overlaps nor conflicts with the other.
+Claude Code's built-in `auto-mode` classifies permission decisions (allow/soft_deny/hard_deny). DMR routes to the right model. They are complementary — neither overlaps nor conflicts with the other.
 
 ---
 
 ## Development
 
 ```bash
-git clone https://github.com/yourname/cc-dynamic-model-routing
+git clone https://github.com/elmokirk/cc-dynamic-model-routing
 cd cc-dynamic-model-routing
 npm install
 

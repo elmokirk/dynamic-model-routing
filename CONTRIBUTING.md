@@ -3,7 +3,7 @@
 ## Development setup
 
 ```bash
-git clone https://github.com/yourname/cc-dynamic-model-routing
+git clone https://github.com/elmokirk/cc-dynamic-model-routing
 cd cc-dynamic-model-routing
 npm install
 npm test       # 10 unit tests

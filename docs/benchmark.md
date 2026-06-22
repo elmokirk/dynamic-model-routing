@@ -14,13 +14,13 @@ npm run bench
 
 ### Routing Accuracy
 
-**30/30 = 100%** across a balanced corpus of 10 haiku · 10 sonnet · 10 opus prompts.
+**30/30 = 100%** across a balanced corpus of 10 low · 10 mid · 10 high prompts.
 
 | Tier | Correct | Accuracy | Avg confidence |
 |------|---------|----------|----------------|
-| haiku | 10/10 | 100% | 95% |
-| sonnet | 10/10 | 100% | 95% |
-| opus | 10/10 | 100% | 88% |
+| low   | 10/10 | 100% | 95% |
+| mid    | 10/10 | 100% | 95% |
+| high  | 10/10 | 100% | 88% |
 | **Overall** | **30/30** | **100%** | **92%** |
 
 ### Token Cost
@@ -70,7 +70,7 @@ The `UserPromptSubmit` hook fires before Claude processes the prompt. The 7 µs 
 
 The test corpus in [`bench/benchmark.ts`](../bench/benchmark.ts) contains 30 prompts:
 
-### Haiku prompts (simple, explanatory, formatting)
+### Low tier prompts (simple, explanatory, formatting)
 
 These are prompts where a cheap, fast model is appropriate. The expected output is low-effort information retrieval or simple formatting — no code generation.
 
@@ -87,7 +87,7 @@ explain briefly how git rebase works
 show me the git log for this repo
 ```
 
-### Sonnet prompts (implementation, bug fixes, tests, refactors)
+### Mid tier prompts (implementation, bug fixes, tests, refactors)
 
 Standard engineering tasks — one or a few files, clear scope, medium complexity.
 
@@ -104,7 +104,7 @@ implement the CSV export feature
 add feature: dark mode toggle with localStorage persistence
 ```
 
-### Opus prompts (architecture, strategy, complex debug, multi-file)
+### High tier prompts (architecture, strategy, complex debug, multi-file)
 
 High-stakes, open-ended, or cross-cutting tasks where the strongest model earns its cost.
 
@@ -129,11 +129,11 @@ design a system to handle real-time collaboration at scale
 
 The keyword router uses weighted substring matching. For each prompt:
 
-1. Score each model (haiku / sonnet / opus) by counting matched keywords from `DEFAULT_CONFIG.rules[model].keywords`
+1. Score each model (low / mid / high) by counting matched keywords from `DEFAULT_CONFIG.rules[model].keywords`
 2. The model with the most matches wins
 3. Confidence = `0.5 + (best_score / total_score) * 0.45`, capped at 0.95
-4. On a tie, opus beats sonnet beats haiku (ordered in the iteration)
-5. If no keywords match, the `defaultModel` (sonnet) is returned with confidence 0.3
+4. On a tie, high beats mid beats low (ordered in the iteration)
+5. If no keywords match, the `defaultModel` (mid) is returned with confidence 0.3
 
 ### Ease-of-use interpretation
 
@@ -162,17 +162,17 @@ When `npm run bench` shows misrouted prompts, the output includes a recommendati
 MISROUTED PROMPTS
 ────────────────────────────────────
   Prompt:   "design a system to handle real-time collaboration at scale"
-  Expected: opus  →  Got: sonnet  (confidence: 30%)
+  Expected: high  →  Got: mid  (confidence: 30%)
   Signals:  (none)
 
   RECOMMENDATION: Add the above prompts' distinctive terms to the
-  correct model's keyword list in DEFAULT_CONFIG.rules.
+  correct tier's keyword list in DEFAULT_CONFIG.rules.
 ```
 
 Fix by adding keywords to `src/types.ts` → `DEFAULT_CONFIG.rules`:
 
 ```typescript
-opus: {
+high: {
   keywords: [
     // existing keywords...
     'at scale',           // ← added: "handle X at scale"
@@ -190,7 +190,7 @@ For prompts specific to your team or project (domain terms, internal service nam
 // .claude/dynamic-model-routing.json
 {
   "rules": {
-    "opus": {
+    {"high"}: {
       "keywords": ["our-payment-service", "billing refactor", "multi-region"]
     }
   }

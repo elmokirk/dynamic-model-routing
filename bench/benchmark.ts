@@ -9,51 +9,51 @@
  */
 
 import { route } from '../src/router.js'
-import { DEFAULT_CONFIG, type Model } from '../src/types.js'
+import { DEFAULT_CONFIG, CLAUDE_MODEL_IDS, type Model } from '../src/types.js'
 
 // ─── Test corpus ──────────────────────────────────────────────────────────────
 // Each entry: [prompt, expectedModel]
 const CORPUS: [string, Model][] = [
-  // ── HAIKU (simple, explanatory, formatting) ──────────────────────────────
-  ['summarize this README file for me', 'haiku'],
-  ['explain briefly what a closure is', 'haiku'],
-  ['what is a promise in JavaScript', 'haiku'],
-  ['list all the files in this directory', 'haiku'],
-  ['format this JSON to be readable', 'haiku'],
-  ['rename the variable userId to user_id', 'haiku'],
-  ['show me a simple example of async/await', 'haiku'],
-  ['what does this error message mean', 'haiku'],
-  ['explain briefly how git rebase works', 'haiku'],
-  ['show me the git log for this repo', 'haiku'],
+  // ── LOW (simple, explanatory, formatting) ────────────────────────────────
+  ['summarize this README file for me', 'low'],
+  ['explain briefly what a closure is', 'low'],
+  ['what is a promise in JavaScript', 'low'],
+  ['list all the files in this directory', 'low'],
+  ['format this JSON to be readable', 'low'],
+  ['rename the variable userId to user_id', 'low'],
+  ['show me a simple example of async/await', 'low'],
+  ['what does this error message mean', 'low'],
+  ['explain briefly how git rebase works', 'low'],
+  ['show me the git log for this repo', 'low'],
 
-  // ── SONNET (implement, fix, test, refactor) ────────────────────────────────
-  ['implement user authentication with JWT tokens', 'sonnet'],
-  ['fix the login bug in auth.ts line 42', 'sonnet'],
-  ['write tests for the payment service module', 'sonnet'],
-  ['refactor the user service to use dependency injection', 'sonnet'],
-  ['add a sidebar button component to the dashboard', 'sonnet'],
-  ['implement rate limiting middleware for the API', 'sonnet'],
-  ['fix the null pointer exception in the cart handler', 'sonnet'],
-  ['write a migration to add the users table', 'sonnet'],
-  ['implement the CSV export feature', 'sonnet'],
-  ['add feature: dark mode toggle with localStorage persistence', 'sonnet'],
+  // ── MID (implement, fix, test, refactor) ─────────────────────────────────
+  ['implement user authentication with JWT tokens', 'mid'],
+  ['fix the login bug in auth.ts line 42', 'mid'],
+  ['write tests for the payment service module', 'mid'],
+  ['refactor the user service to use dependency injection', 'mid'],
+  ['add a sidebar button component to the dashboard', 'mid'],
+  ['implement rate limiting middleware for the API', 'mid'],
+  ['fix the null pointer exception in the cart handler', 'mid'],
+  ['write a migration to add the users table', 'mid'],
+  ['implement the CSV export feature', 'mid'],
+  ['add feature: dark mode toggle with localStorage persistence', 'mid'],
 
-  // ── OPUS (architecture, strategy, complex debug, multi-file) ──────────────
-  ['design the architecture for a multi-tenant SaaS platform', 'opus'],
-  ['what is the strategy for migrating our monolith to microservices', 'opus'],
-  ['refactor across all authentication files to use the new middleware', 'opus'],
-  ['complex debug: payments are failing intermittently in production', 'opus'],
-  ['system design for handling 1 million concurrent users', 'opus'],
-  ['ambiguous high-impact decision: should we rewrite the frontend in React or keep Vue', 'opus'],
-  ['architecture review for the entire microservices backend', 'opus'],
-  ['strategy for improving performance across all service endpoints', 'opus'],
-  ['multi-file refactor: extract shared utilities from all domain modules', 'opus'],
-  ['design a system to handle real-time collaboration at scale', 'opus'],
+  // ── HIGH (architecture, strategy, complex debug, multi-file) ─────────────
+  ['design the architecture for a multi-tenant SaaS platform', 'high'],
+  ['what is the strategy for migrating our monolith to microservices', 'high'],
+  ['refactor across all authentication files to use the new middleware', 'high'],
+  ['complex debug: payments are failing intermittently in production', 'high'],
+  ['system design for handling 1 million concurrent users', 'high'],
+  ['ambiguous high-impact decision: should we rewrite the frontend in React or keep Vue', 'high'],
+  ['architecture review for the entire microservices backend', 'high'],
+  ['strategy for improving performance across all service endpoints', 'high'],
+  ['multi-file refactor: extract shared utilities from all domain modules', 'high'],
+  ['design a system to handle real-time collaboration at scale', 'high'],
 ]
 
 // ─── Token estimation ─────────────────────────────────────────────────────────
 function estimateHookTokens(model: Model, effort: string, confidence: number, reason: string, mode = 'confirm'): number {
-  const modelId = { haiku: 'claude-haiku-4-5-20251001', sonnet: 'claude-sonnet-4-6', opus: 'claude-opus-4-8' }[model]
+  const modelId = CLAUDE_MODEL_IDS[model]
   const box = [
     `╔═ DMR (${mode}) ══════════════════════╗`,
     `  Model:      ${model} (${modelId})`,
@@ -133,7 +133,7 @@ function run(): void {
   const avgTokens = Math.round(results.reduce((s, r) => s + r.hookTokens, 0) / results.length)
 
   // Per-tier accuracy
-  const tiers: Model[] = ['haiku', 'sonnet', 'opus']
+  const tiers: Model[] = ['low', 'mid', 'high']
   const tierStats = tiers.map(tier => {
     const subset = results.filter(r => r.expected === tier)
     const tierCorrect = subset.filter(r => r.correct).length
@@ -148,7 +148,6 @@ function run(): void {
     : 0
 
   // Ease-of-use score: weighted accuracy (70%) + confidence gap calibration (30%)
-  // Confidence gap = correct answers should have high conf, wrong ones lower
   const confGap = wrongResults.length > 0 ? (correctConf - wrongConf) / correctConf : 1
   const easeScore = Math.round((accuracy * 0.7 + Math.min(1, confGap) * 0.3) * 100)
 
@@ -167,15 +166,15 @@ function run(): void {
   console.log()
   console.log('TOKEN COST PER HOOK INVOCATION')
   console.log(`  Avg hook output:  ~${avgTokens} tokens per turn  (keyword router — zero API calls)`)
-  console.log(`  LLM fallback:     ~200-400 tokens per call via Haiku API  (off by default)`)
-  console.log(`  Haiku API cost:   ~$0.000025 per fallback call  (@$0.80/M input + $4/M output)`)
+  console.log(`  LLM fallback:     ~200-400 tokens per call via low-tier API  (off by default)`)
+  console.log(`  Low-tier cost:    ~$0.000025 per fallback call  (@$0.80/M input + $4/M output)`)
   console.log(`  At 100 prompts/day with fallback OFF:  ~${avgTokens * 100} tokens added to context (~$0.00)`)
   console.log()
 
   console.log('LATENCY (keyword router — pure JS, no network)')
   console.log(`  Avg:  ${avgLatency}µs per decision`)
   console.log(`  p99:  ${p99Latency ?? avgLatency}µs per decision`)
-  console.log(`  This runs in the UserPromptSubmit hook before Claude responds — effectively instant.`)
+  console.log(`  This runs in the UserPromptSubmit hook before the model responds — effectively instant.`)
   console.log()
 
   console.log('CONFIDENCE CALIBRATION')
@@ -213,14 +212,13 @@ function run(): void {
       console.log()
     }
     console.log('  RECOMMENDATION: Add the above prompts\' distinctive terms to the')
-    console.log(`  correct model's keyword list in DEFAULT_CONFIG.rules.`)
+    console.log(`  correct tier's keyword list in DEFAULT_CONFIG.rules.`)
   } else {
     console.log('  No misrouted prompts — perfect accuracy on this corpus.')
   }
 
   console.log('\n' + '═'.repeat(92))
 
-  // Exit with error code if accuracy is below 80%
   if (accuracy < 0.8) {
     console.error('\n⚠  Accuracy below 80% threshold — router needs keyword tuning.')
     process.exit(1)
