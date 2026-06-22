@@ -25,7 +25,7 @@ var DEFAULT_CONFIG = {
   writeClaudeSettings: false,
   rules: {
     opus: {
-      keywords: ["architecture", "strategy", "multi-file", "complex debug", "system design", "refactor across", "ambiguous", "high-impact"],
+      keywords: ["architecture", "strategy", "multi-file", "complex debug", "system design", "refactor across", "ambiguous", "high-impact", "at scale", "design a system", "design the system"],
       effort: "high"
     },
     sonnet: {
@@ -33,7 +33,7 @@ var DEFAULT_CONFIG = {
       effort: "medium"
     },
     haiku: {
-      keywords: ["summarize", "explain briefly", "format", "rename", "simple", "what is", "list", "show me"],
+      keywords: ["summarize", "explain briefly", "format", "rename", "simple", "what is", "what does", "list", "show me", "what error", "error mean"],
       effort: "low"
     }
   }
