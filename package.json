@@ -1,9 +1,11 @@
 {
-  "name": "cc-dynamic-model-routing",
+  "name": "dynamic-model-routing",
   "version": "0.3.0",
   "description": "Dynamic Model Routing plugin for Claude Code",
   "type": "module",
-  "bin": { "dmr": "./dist/cli.js" },
+  "bin": {
+    "dmr": "./dist/cli.js"
+  },
   "scripts": {
     "build": "tsx esbuild.config.ts",
     "test": "vitest run",
@@ -18,5 +20,11 @@
     "tsx": "^4.19.0",
     "typescript": "^5.8.0",
     "vitest": "^3.0.0"
+  },
+  "packageManager": "pnpm@10.33.0",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
   }
 }

@@ -5,7 +5,7 @@ Reproducible benchmarks for routing accuracy, decision latency, token cost per h
 Run at any time with:
 
 ```bash
-npm run bench
+pnpm bench
 ```
 
 ---
@@ -156,7 +156,7 @@ A high confidence gap means the router "knows what it doesn't know" — it's con
 
 ## Tuning Guide
 
-When `npm run bench` shows misrouted prompts, the output includes a recommendation:
+When `pnpm bench` shows misrouted prompts, the output includes a recommendation:
 
 ```
 MISROUTED PROMPTS
@@ -182,7 +182,7 @@ high: {
 },
 ```
 
-Then re-run `npm run bench` to verify accuracy improved. Commit the change.
+Then re-run `pnpm bench` to verify accuracy improved. Commit the change.
 
 For prompts specific to your team or project (domain terms, internal service names, jargon), prefer adding them to your **project config** rather than DEFAULT_CONFIG so they don't affect other users:
 

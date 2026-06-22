@@ -53,5 +53,5 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: [S
 - Session-scoped mode switching via `.claude/dmr-session.json`
 - Optional LLM fallback classifier (`useLLMFallback: true`)
 - Installer: `dmr install --global | --project | --local`
-- Benchmark suite: 30-prompt accuracy, token cost, latency, ease-of-use score (`npm run bench`)
+- Benchmark suite: 30-prompt accuracy, token cost, latency, ease-of-use score (`pnpm bench`)
 - Community files: CONTRIBUTING.md, SECURITY.md, GitHub issue + PR templates

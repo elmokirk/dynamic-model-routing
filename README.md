@@ -24,6 +24,39 @@ Works with **Claude Code**, **Codex CLI**, **OpenCode**, and **Ollama** (local +
 
 ---
 
+## Navigation
+
+| Section | Description |
+|---------|-------------|
+| [Why DMR?](#why-dmr) | The problem it solves |
+| [Model Tiers](#model-tiers) | low/mid/high/max across all providers |
+| [Features](#features) | Full feature list |
+| [Install](#install) | Claude Code · Codex · OpenCode · CLI |
+| [Usage](#usage) | Confirm · Auto · Hook · Bypass · Mode |
+| [Default Routing](#default-routing) | Keyword → tier table |
+| [Configuration](#configuration) | Full schema · max tier · per-project keywords |
+| [Decision Object](#decision-object) | TypeScript interface |
+| [Benchmark](#benchmark) | 100% accuracy · 7µs · 51 tokens |
+| [Model Guides](#model-guides) | Codex/OpenAI · Ollama cloud + local |
+| [Architecture](#architecture) | Hook flow + source file map |
+| [Plugin Commands](#plugin-commands) | `/dmr run\|mode\|status\|install` |
+| [Compatibility](#compatibility) | Claude Code · Codex · OpenCode · IDE |
+| [Known Limitations](#known-limitations) | What the hook can and can't do |
+| [Development](#development) | Build · test · benchmark · extend |
+| [Roadmap](#roadmap) | Planned improvements |
+
+**Docs:**
+| File | Contents |
+|------|----------|
+| [docs/benchmark.md](./docs/benchmark.md) | Full benchmark methodology, corpus, tuning guide |
+| [docs/models-codex.md](./docs/models-codex.md) | Codex CLI + OpenAI API model decision table |
+| [docs/models-ollama.md](./docs/models-ollama.md) | Ollama cloud top 5 + local models by VRAM tier |
+| [CHANGELOG.md](./CHANGELOG.md) | Version history |
+| [CONTRIBUTING.md](./CONTRIBUTING.md) | How to contribute |
+| [SECURITY.md](./SECURITY.md) | Security policy |
+
+---
+
 ## Why DMR?
 
 Choosing the wrong model is a quiet tax on every coding session:
@@ -70,7 +103,7 @@ Provider-agnostic tier names map to the best concrete model per provider:
 ### Claude Code (plugin marketplace)
 
 ```bash
-claude plugin install github:elmokirk/cc-dynamic-model-routing
+claude plugin install github:elmokirk/dynamic-model-routing
 ```
 
 Then wire up the hook once per project (or globally):
@@ -83,7 +116,7 @@ Then wire up the hook once per project (or globally):
 ### Codex CLI (plugin marketplace)
 
 ```bash
-codex plugin install github:elmokirk/cc-dynamic-model-routing
+codex plugin install github:elmokirk/dynamic-model-routing
 ```
 
 ### OpenCode (local plugin)
@@ -100,7 +133,7 @@ opencode
 ### Standalone CLI
 
 ```bash
-npm install -g cc-dynamic-model-routing
+pnpm add -g dynamic-model-routing
 dmr run "implement user authentication with JWT"
 ```
 
@@ -174,6 +207,15 @@ dmr mode off        # or: /dmr mode off
 ```
 
 Mode is stored in `.claude/dmr-session.json` and never touches `settings.json`.
+
+### Check current state
+
+```bash
+dmr status
+# [DMR] Mode: auto (config default: confirm)
+# [DMR] LLM fallback: false
+# [DMR] Write settings: false
+```
 
 ---
 
@@ -307,7 +349,7 @@ The keyword router achieves **100% accuracy** on a 30-prompt balanced corpus wit
 Run the benchmark yourself:
 
 ```bash
-npm run bench
+pnpm bench
 ```
 
 Full methodology, corpus, tuning guide, and keyword router vs LLM fallback comparison: **[docs/benchmark.md](./docs/benchmark.md)**
@@ -404,7 +446,7 @@ The hook fires before the model responds, but the active model is already determ
 This is the only documented, supported writable field in `settings.json`. No undocumented fields are written.
 
 **4. LLM fallback costs tokens.**
-When `useLLMFallback: true`, a low-tier API call fires for every prompt below the confidence threshold. ~$0.000025/call. Keep it off unless the keyword router is misrouting frequently for your team's prompt style.
+When `useLLMFallback: true`, a low-tier API call fires for every prompt below the confidence threshold. ~$0.000025/call. Keep it off unless the keyword router is misrouting frequently.
 
 **5. `claude auto-mode` is a different system.**
 Claude Code's built-in `auto-mode` classifies permission decisions (allow/soft_deny/hard_deny). DMR routes to the right model. They are complementary — neither overlaps nor conflicts with the other.
@@ -414,23 +456,33 @@ Claude Code's built-in `auto-mode` classifies permission decisions (allow/soft_d
 ## Development
 
 ```bash
-git clone https://github.com/elmokirk/cc-dynamic-model-routing
-cd cc-dynamic-model-routing
-npm install
+git clone https://github.com/elmokirk/dynamic-model-routing
+cd dynamic-model-routing
+pnpm install
 
-npm test          # 10 routing tests
-npm run bench     # 30-prompt accuracy + token cost benchmark
-npm run build     # compile src/ → dist/
-npm run dev       # run CLI via tsx (no build needed)
+pnpm test          # 10 routing tests
+pnpm bench         # 30-prompt accuracy + token cost benchmark
+pnpm build         # compile src/ → dist/
+pnpm dev           # run CLI via tsx (no build needed)
 ```
 
 ### Adding keywords
 
-Edit `DEFAULT_CONFIG.rules` in [`src/types.ts`](./src/types.ts), then run `npm run bench` to verify accuracy held. Commit both.
+Edit `DEFAULT_CONFIG.rules` in [`src/types.ts`](./src/types.ts), then run `pnpm bench` to verify accuracy held. Commit both.
 
 ### Project-specific overrides
 
 Create `.claude/dynamic-model-routing.json` in your project. Rules deep-merge with defaults.
+
+---
+
+## Roadmap
+
+- [ ] **Bun runtime migration** — replace pnpm + tsx + vitest with a single Bun runtime. Bun runs TypeScript natively, has a built-in test runner, and installs in ~500ms. Planned for v0.4.0.
+- [ ] **`max` tier keywords** — ship default keyword rules for the max tier (security audit, full-codebase analysis, greenfield design)
+- [ ] **Reasoning effort passthrough** — map DMR effort levels to `reasoning_effort: low|medium|high` for o-series models (o3, o4-mini) via OpenCode
+- [ ] **`dmr install` for OpenCode** — extend the installer CLI to write OpenCode config in addition to Claude/Codex settings
+- [ ] **Codex app support** — verify and document hook behavior in the Codex desktop app once plugin architecture is public
 
 ---
 

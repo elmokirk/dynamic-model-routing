@@ -3,12 +3,12 @@
 ## Development setup
 
 ```bash
-git clone https://github.com/elmokirk/cc-dynamic-model-routing
-cd cc-dynamic-model-routing
-npm install
-npm test       # 10 unit tests
-npm run bench  # 30-prompt accuracy benchmark
-npm run build  # compile src/ → dist/
+git clone https://github.com/elmokirk/dynamic-model-routing
+cd dynamic-model-routing
+pnpm install
+pnpm test       # 10 unit tests
+pnpm bench      # 30-prompt accuracy benchmark
+pnpm build      # compile src/ → dist/
 ```
 
 ## Making changes
@@ -18,8 +18,8 @@ npm run build  # compile src/ → dist/
 Edit `DEFAULT_CONFIG.rules` in [`src/types.ts`](./src/types.ts), then:
 
 ```bash
-npm run bench   # verify accuracy held at 100%
-npm test        # verify all 10 unit tests still pass
+pnpm bench   # verify accuracy held at 100%
+pnpm test    # verify all 10 unit tests still pass
 ```
 
 Both must pass before opening a PR.
@@ -28,7 +28,7 @@ Both must pass before opening a PR.
 
 1. Open an issue first to discuss — routing behaviour changes affect all users
 2. Write tests in `tests/router.test.ts` before implementing
-3. Run `npm test` + `npm run bench` — both must pass
+3. Run `pnpm test` + `pnpm bench` — both must pass
 4. Update the relevant section of `README.md` if the feature is user-visible
 
 ### Fixing a bug
@@ -50,9 +50,9 @@ chore: bump tsx to 4.20
 
 ## Pull request checklist
 
-- [ ] `npm test` passes (10/10)
-- [ ] `npm run bench` passes (≥ 80% accuracy, ideally 100%)
-- [ ] `npm run build` succeeds
+- [ ] `pnpm test` passes (10/10)
+- [ ] `pnpm bench` passes (≥ 80% accuracy, ideally 100%)
+- [ ] `pnpm build` succeeds
 - [ ] README updated if behaviour changed
 - [ ] No absolute paths committed in any file
 

@@ -12,9 +12,9 @@
 
 ## Checklist
 
-- [ ] `npm test` passes (10/10)
-- [ ] `npm run bench` passes (accuracy ≥ 80%, ideally 100%)
-- [ ] `npm run build` succeeds and `dist/` is committed
+- [ ] `pnpm test` passes (10/10)
+- [ ] `pnpm bench` passes (accuracy ≥ 80%, ideally 100%)
+- [ ] `pnpm build` succeeds and `dist/` is committed
 - [ ] README updated if behaviour changed
 - [ ] CHANGELOG.md updated
 - [ ] No absolute paths in committed files
