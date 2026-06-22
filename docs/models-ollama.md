@@ -1,0 +1,159 @@
+# Ollama Model Decision Guide
+
+DMR supports Ollama through the OpenCode plugin (`DMR_PROVIDER=ollama`).
+This document lists the best models by hardware tier and the top cloud models
+available via Ollama's subscription service.
+
+---
+
+## Cloud Models (Ollama Cloud — no local GPU required)
+
+Run cloud models without downloading weights: `ollama run <model>:cloud`
+Requires `ollama signin`. Free tier available; Pro ($20/mo) and Max ($100/mo) for
+heavy usage. GPU time is the billing unit — not tokens.
+
+### Top 5 Cloud Models
+
+| Rank | Model | Tag | Tier | Speed | Best For |
+|------|-------|-----|------|-------|----------|
+| 1 | **Kimi K2.6** | `kimi-k2.6:cloud` | opus | 106 t/s | Architecture, long-horizon coding, swarm orchestration (up to 300 sub-agents), multimodal input, 256K context |
+| 2 | **DeepSeek V4 Pro** | `deepseek-v4-pro:cloud` | opus | ~38 t/s | Deep reasoning, complex multi-step coding, research-quality answers |
+| 3 | **GLM-5.1** | `glm-5.1:cloud` | sonnet/opus | ~52 t/s | Code generation, Chinese + English, output-heavy tasks (note: highest output cost of the three) |
+| 4 | **MiniMax** | `minimax:cloud` | sonnet | fast | Balanced general coding, long context, cost-effective on Pro tier |
+| 5 | **GPT-OSS 20B** | `gpt-oss:20b` | sonnet | 136 t/s | Fastest cloud model, MoE architecture — ideal for rapid iteration |
+
+### DMR Cloud Tier Mapping
+
+```typescript
+export const OLLAMA_CLOUD_MODEL_IDS: Record<Model, string> = {
+  haiku:  'gpt-oss:20b',         // fast, MoE, great for mechanical tasks
+  sonnet: 'glm-5.1:cloud',       // strong code generation
+  opus:   'kimi-k2.6:cloud',     // best overall, multimodal, 256K context
+}
+```
+
+### Cloud Cost Comparison (API prices for reference)
+
+| Model | Input (per 1M) | Output (per 1M) | Notes |
+|-------|---------------|----------------|-------|
+| Kimi K2.6 | $0.15 | $4.00 | Best value at this quality tier |
+| DeepSeek V4 Pro | $1.74 | $3.48 | Higher input cost, slower |
+| GLM-5.1 | $1.40 | $4.40 | Most expensive output |
+
+> Ollama Cloud billing is GPU-time based, not per-token — actual costs depend on
+> your subscription tier and session length, not the API prices above.
+
+---
+
+## Local Models by VRAM Tier
+
+All recommendations use **Q4_K_M quantization** unless noted.
+Rule of thumb: model fits if Q4_K_M file size + ~1.5 GB ≤ your VRAM.
+
+---
+
+### 8 GB VRAM
+*(RTX 3060, RTX 4060, RX 6700 XT, Apple M1/M2 8GB)*
+
+| Priority | Model | Pull Command | Best For | Notes |
+|----------|-------|-------------|----------|-------|
+| **1st — coding** | `qwen2.5-coder:7b` | `ollama pull qwen2.5-coder:7b` | Coding tasks | Outperforms CodeLlama 13B at this VRAM |
+| **2nd — reasoning** | `deepseek-r1:7b` | `ollama pull deepseek-r1:7b` | Debug, logic, step-by-step | Best reasoning at 8GB |
+| **3rd — lightweight** | `phi4-mini` | `ollama pull phi4-mini` | Fast Q&A, math, explain | 3.8B, lowest VRAM of the three |
+| **backup** | `qwen3:8b` | `ollama pull qwen3:8b` | General coding + chat | Hybrid thinking mode |
+
+**DMR mapping for 8GB:**
+```typescript
+{ haiku: 'phi4-mini', sonnet: 'qwen2.5-coder:7b', opus: 'deepseek-r1:7b' }
+```
+
+---
+
+### 16 GB VRAM
+*(RTX 3080, RTX 4070, RTX 4070 Ti, Apple M1/M2 Pro 16GB)*
+
+| Priority | Model | Pull Command | Best For | Notes |
+|----------|-------|-------------|----------|-------|
+| **1st — coding** | `deepseek-coder-v2:16b` | `ollama pull deepseek-coder-v2:16b` | All coding tasks | MoE, activates subset of 16B params |
+| **2nd — all-round** | `qwen3:14b` | `ollama pull qwen3:14b` | Chat + coding + reasoning | Safest first pull for 16GB |
+| **3rd — reasoning** | `deepseek-r1:14b` | `ollama pull deepseek-r1:14b` | Complex bugs, logic | Sweet spot for local reasoning |
+| **MoE bonus** | `qwen3.6:35b-a3b` | `ollama pull qwen3.6:35b-a3b` | Big-model quality | Activates 3B params per token — fast |
+
+**DMR mapping for 16GB:**
+```typescript
+{ haiku: 'qwen3:14b', sonnet: 'deepseek-coder-v2:16b', opus: 'deepseek-r1:14b' }
+```
+
+---
+
+### 24 GB VRAM
+*(RTX 3090, RTX 4090, Apple M2 Max/Ultra)*
+
+| Priority | Model | Pull Command | Best For | Notes |
+|----------|-------|-------------|----------|-------|
+| **1st — coding** | `qwen2.5-coder:32b` | `ollama pull qwen2.5-coder:32b` | Best local coding | 92.7% HumanEval — rivals cloud models |
+| **2nd — agentic** | `qwen3-coder:30b` | `ollama pull qwen3-coder:30b` | Agentic coding, 256K ctx | MoE: 30B total, 3B active, 7B-class speed |
+| **3rd — reasoning** | `deepseek-r1:32b` | `ollama pull deepseek-r1:32b` | Hard reasoning | Strongest local reasoning on 24GB |
+| **daily driver** | `qwen3.6:27b` | `ollama pull qwen3.6:27b` | Chat + refactors | Fastest daily-use model at this tier |
+
+**DMR mapping for 24GB:**
+```typescript
+{ haiku: 'qwen3.6:27b', sonnet: 'qwen2.5-coder:32b', opus: 'qwen3-coder:30b' }
+```
+
+---
+
+### 32 GB+ VRAM / Unified Memory
+*(Dual 3090/4090, Apple M2 Max 96GB, M3 Ultra, Workstations)*
+
+| Priority | Model | Pull Command | Best For | Notes |
+|----------|-------|-------------|----------|-------|
+| **1st — all-round** | `qwen3:32b` | `ollama pull qwen3:32b` | Everything | Best single-GPU model overall |
+| **2nd — agentic** | `devstral-small-2` | `ollama pull devstral-small-2` | Coding agents | Purpose-built for agentic coding |
+| **3rd — reasoning** | `qwen3-coder:30b` | `ollama pull qwen3-coder:30b` | Code + long ctx | 256K context, fast MoE |
+| **largest local** | `llama3.3:70b` | `ollama pull llama3.3:70b` | Max capability | Needs 48GB+ for Q4_K_M |
+
+**DMR mapping for 32GB+:**
+```typescript
+{ haiku: 'qwen3:32b', sonnet: 'devstral-small-2', opus: 'qwen3:32b' }
+// or go larger:
+{ haiku: 'qwen2.5-coder:7b', sonnet: 'qwen3:32b', opus: 'llama3.3:70b' }
+```
+
+---
+
+## Configuring DMR for Ollama
+
+Set the provider in your environment before launching OpenCode:
+
+```bash
+export DMR_PROVIDER=ollama
+export DMR_OLLAMA_TIER=16gb   # 8gb | 16gb | 24gb | 32gb (optional, future)
+opencode
+```
+
+Or override model IDs in `.claude/dynamic-model-routing.json`:
+
+```json
+{
+  "ollamaModelIds": {
+    "haiku":  "qwen3:14b",
+    "sonnet": "deepseek-coder-v2:16b",
+    "opus":   "deepseek-r1:14b"
+  }
+}
+```
+
+---
+
+## Quick Comparison: Cloud vs Local
+
+| Dimension | Ollama Cloud | Local (24GB) |
+|-----------|-------------|--------------|
+| Setup | `ollama signin` | `ollama pull <model>` |
+| GPU required | No | Yes |
+| Best model quality | Kimi K2.6 (1T params) | qwen2.5-coder:32b |
+| Cost | Free tier available | Hardware only |
+| Privacy | Ollama infra (strong policy, no audit cert) | 100% local |
+| Speed (haiku tasks) | ~136 t/s (gpt-oss) | ~80 t/s (local 7B) |
+| Context | 256K (Kimi K2.6) | 128K typical |

@@ -50,6 +50,21 @@ export const CODEX_MODEL_IDS: Record<Model, string> = {
   opus: 'gpt-5.5',
 }
 
+// Current OpenAI API models — used by OpenCode with provider=openai
+export const OPENAI_MODEL_IDS: Record<Model, string> = {
+  haiku: 'gpt-4.1-mini',
+  sonnet: 'gpt-4.1',
+  opus: 'o4-mini',
+}
+
+// Ollama local models — defaults to 16-24GB sweet spot
+// Override via DMR_OLLAMA_HAIKU / DMR_OLLAMA_SONNET / DMR_OLLAMA_OPUS env vars
+export const OLLAMA_MODEL_IDS: Record<Model, string> = {
+  haiku: process.env.DMR_OLLAMA_HAIKU ?? 'qwen2.5-coder:7b',
+  sonnet: process.env.DMR_OLLAMA_SONNET ?? 'qwen2.5-coder:32b',
+  opus: process.env.DMR_OLLAMA_OPUS ?? 'qwen3-coder:30b',
+}
+
 export const DEFAULT_CONFIG: DmrConfig = {
   mode: 'confirm',
   defaultModel: 'sonnet',

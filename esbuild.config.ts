@@ -35,4 +35,9 @@ await Promise.all([
     entryPoints: ['src/codex-session-start.ts'],
     outfile: 'dist/codex-session-start.js',
   }),
+  esbuild.build({
+    ...shared,
+    entryPoints: ['src/opencode-plugin.ts'],
+    outfile: 'dist/opencode-plugin.js',
+  }),
 ])
