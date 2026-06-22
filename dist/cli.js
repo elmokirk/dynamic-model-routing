@@ -12,30 +12,49 @@ import { homedir } from "os";
 import { join } from "path";
 
 // src/types.ts
+var CLAUDE_MODEL_IDS = {
+  low: "claude-haiku-4-5-20251001",
+  mid: "claude-sonnet-4-6",
+  high: "claude-opus-4-8",
+  max: "claude-opus-4-8"
+  // no higher Claude tier yet; override when available
+};
+var OLLAMA_MODEL_IDS = {
+  low: process.env.DMR_OLLAMA_LOW ?? "qwen2.5-coder:7b",
+  mid: process.env.DMR_OLLAMA_MID ?? "qwen2.5-coder:32b",
+  high: process.env.DMR_OLLAMA_HIGH ?? "qwen3-coder:30b",
+  max: process.env.DMR_OLLAMA_MAX ?? "kimi-k2.6:cloud"
+};
 var DEFAULT_CONFIG = {
   mode: "confirm",
-  defaultModel: "sonnet",
+  defaultModel: "mid",
   defaultEffort: "medium",
-  allowedModels: ["haiku", "sonnet", "opus"],
+  allowedModels: ["low", "mid", "high"],
+  // max is opt-in
   autoModeMinConfidence: 0.75,
   useLLMFallback: false,
-  llmClassifierModel: "haiku",
+  llmClassifierModel: "low",
   showReason: true,
   logDecisions: true,
   writeClaudeSettings: false,
   rules: {
-    opus: {
+    high: {
       keywords: ["architecture", "strategy", "multi-file", "complex debug", "system design", "refactor across", "ambiguous", "high-impact", "at scale", "design a system", "design the system"],
       effort: "high"
     },
-    sonnet: {
+    mid: {
       keywords: ["implement", "fix", "test", "refactor", "component", "bugfix", "add feature", "write"],
       effort: "medium"
     },
-    haiku: {
+    low: {
       keywords: ["summarize", "explain briefly", "format", "rename", "simple", "what is", "what does", "list", "show me", "what error", "error mean"],
       effort: "low"
     }
+    // max tier — opt-in, add to allowedModels to enable:
+    // max: {
+    //   keywords: ['security audit', 'full codebase', 'entire codebase', 'greenfield', 'migrate everything'],
+    //   effort: 'max',
+    // },
   }
 };
 
@@ -94,7 +113,7 @@ function score(prompt, keywords) {
   return { score: matched.length, matched };
 }
 function route(prompt, config) {
-  const models = ["opus", "sonnet", "haiku"];
+  const models = ["max", "high", "mid", "low"].filter((m) => config.allowedModels.includes(m) && config.rules[m] != null);
   const scores = models.map((model) => {
     const rule = config.rules[model];
     const { score: s, matched } = score(prompt, rule.keywords);
@@ -124,18 +143,13 @@ function route(prompt, config) {
 
 // src/classifier.ts
 import Anthropic from "@anthropic-ai/sdk";
-var MODEL_IDS = {
-  haiku: "claude-haiku-4-5-20251001",
-  sonnet: "claude-sonnet-4-6",
-  opus: "claude-opus-4-8"
-};
 var SYSTEM = `You are a model routing classifier. Given a user prompt, output ONLY valid JSON matching this exact schema \u2014 no prose, no markdown:
-{"model":"haiku|sonnet|opus","effort":"low|medium|high|xhigh","confidence":0.0,"reason":"string","signals":["string"]}`;
+{"model":"low|mid|high|max","effort":"low|medium|high|xhigh","confidence":0.0,"reason":"string","signals":["string"]}`;
 async function classifyWithLLM(prompt, config) {
   try {
     const client = new Anthropic();
     const res = await client.messages.create({
-      model: MODEL_IDS[config.llmClassifierModel],
+      model: CLAUDE_MODEL_IDS[config.llmClassifierModel],
       max_tokens: 200,
       system: SYSTEM,
       messages: [{ role: "user", content: prompt }]
@@ -199,7 +213,7 @@ function installHook(target = "project", pluginRoot, cwd = process.cwd()) {
 }
 
 // src/cli.ts
-var MODEL_IDS2 = {
+var MODEL_IDS = {
   haiku: "claude-haiku-4-5-20251001",
   sonnet: "claude-sonnet-4-6",
   opus: "claude-opus-4-8"
@@ -226,7 +240,7 @@ async function cmdRun(prompt) {
       console.log(`[DMR] Confidence too low for auto (${(decision.confidence * 100).toFixed(0)}% < ${config.autoModeMinConfidence * 100}%) \u2014 skipping.`);
       return;
     }
-    const modelId = MODEL_IDS2[decision.model];
+    const modelId = MODEL_IDS[decision.model];
     const cmd2 = `claude --model ${modelId} --effort ${decision.effort} "${prompt.replace(/"/g, '\\"')}"`;
     console.log(`[DMR AUTO] Running: ${cmd2}
 `);
@@ -235,18 +249,18 @@ async function cmdRun(prompt) {
   }
   const rl = createInterface({ input: process.stdin, output: process.stdout });
   await new Promise((resolve) => {
-    rl.question("  [Enter] accept / h haiku / s sonnet / o opus / c cancel: ", (answer) => {
+    rl.question("  [Enter] accept / l low / m mid / h high / x max / c cancel: ", (answer) => {
       rl.close();
       const key = answer.trim().toLowerCase();
-      const overrides = { h: "haiku", s: "sonnet", o: "opus" };
+      const overrides = { l: "low", m: "mid", h: "high", x: "max" };
       if (key === "c") {
         console.log("[DMR] Cancelled.");
         resolve();
         return;
       }
       const model = overrides[key] ?? decision.model;
-      const effort = overrides[key] ? config.rules[model].effort : decision.effort;
-      const modelId = MODEL_IDS2[model];
+      const effort = overrides[key] ? config.rules[model]?.effort ?? config.defaultEffort : decision.effort;
+      const modelId = MODEL_IDS[model];
       const cmd2 = `claude --model ${modelId} --effort ${effort} "${prompt.replace(/"/g, '\\"')}"`;
       console.log(`
 [DMR] Running: ${cmd2}

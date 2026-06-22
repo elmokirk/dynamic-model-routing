@@ -7,10 +7,12 @@ function score(prompt: string, keywords: string[]): { score: number; matched: st
 }
 
 export function route(prompt: string, config: DmrConfig): Decision {
-  const models: Model[] = ['opus', 'sonnet', 'haiku']
+  // iterate only models that are both allowed and have rules defined
+  const models: Model[] = (['max', 'high', 'mid', 'low'] as Model[])
+    .filter(m => config.allowedModels.includes(m) && config.rules[m] != null)
 
   const scores = models.map(model => {
-    const rule = config.rules[model]
+    const rule = config.rules[model]!
     const { score: s, matched } = score(prompt, rule.keywords)
     return { model, score: s, matched, effort: rule.effort }
   })

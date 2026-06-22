@@ -7,9 +7,10 @@
 //   export DMR_PROVIDER=ollama      # qwen2.5-coder:7b / :32b / qwen3-coder:30b
 //
 // Ollama model override:
-//   export DMR_OLLAMA_HAIKU=phi4-mini
-//   export DMR_OLLAMA_SONNET=deepseek-coder-v2:16b
-//   export DMR_OLLAMA_OPUS=deepseek-r1:14b
+//   export DMR_OLLAMA_LOW=phi4-mini
+//   export DMR_OLLAMA_MID=deepseek-coder-v2:16b
+//   export DMR_OLLAMA_HIGH=deepseek-r1:14b
+//   export DMR_OLLAMA_MAX=kimi-k2.6:cloud
 //
 // Skip routing for one turn: prefix your prompt with ~
 

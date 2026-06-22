@@ -11,6 +11,14 @@ var CLAUDE_MODEL_IDS = {
   max: "claude-opus-4-8"
   // no higher Claude tier yet; override when available
 };
+var OPENAI_MODEL_IDS = {
+  low: "gpt-4.1-mini",
+  mid: "gpt-4.1",
+  high: "o4-mini",
+  // reasoning model for complex tasks
+  max: "o3"
+  // full reasoning — expensive, use deliberately
+};
 var OLLAMA_MODEL_IDS = {
   low: process.env.DMR_OLLAMA_LOW ?? "qwen2.5-coder:7b",
   mid: process.env.DMR_OLLAMA_MID ?? "qwen2.5-coder:32b",
@@ -128,63 +136,47 @@ function route(prompt, config) {
   };
 }
 
-// src/classifier.ts
-import Anthropic from "@anthropic-ai/sdk";
-var SYSTEM = `You are a model routing classifier. Given a user prompt, output ONLY valid JSON matching this exact schema \u2014 no prose, no markdown:
-{"model":"low|mid|high|max","effort":"low|medium|high|xhigh","confidence":0.0,"reason":"string","signals":["string"]}`;
-async function classifyWithLLM(prompt, config) {
-  try {
-    const client = new Anthropic();
-    const res = await client.messages.create({
-      model: CLAUDE_MODEL_IDS[config.llmClassifierModel],
-      max_tokens: 200,
-      system: SYSTEM,
-      messages: [{ role: "user", content: prompt }]
-    });
-    const text = res.content[0].type === "text" ? res.content[0].text.trim() : "";
-    return JSON.parse(text);
-  } catch {
-    return null;
-  }
+// src/opencode-plugin.ts
+function getModelIds(provider) {
+  if (provider === "openai") return OPENAI_MODEL_IDS;
+  if (provider === "ollama") return OLLAMA_MODEL_IDS;
+  return CLAUDE_MODEL_IDS;
 }
-
-// src/hook.ts
-async function main() {
-  let prompt = "";
-  try {
-    const chunks = [];
-    for await (const chunk of process.stdin) chunks.push(chunk);
-    const raw = Buffer.concat(chunks).toString().trim();
-    if (raw) {
-      try {
-        const input = JSON.parse(raw);
-        prompt = typeof input === "string" ? input : input?.prompt ?? "";
-      } catch {
-        prompt = raw;
+function extractPrompt(messages) {
+  if (!Array.isArray(messages) || messages.length === 0) return "";
+  const last = messages[messages.length - 1];
+  if (!last || typeof last !== "object") return "";
+  const content = last.content;
+  if (typeof content === "string") return content;
+  if (Array.isArray(content)) {
+    const textPart = content.find((p) => p?.type === "text");
+    return textPart?.text ?? "";
+  }
+  return "";
+}
+function dmrPlugin() {
+  return {
+    hooks: {
+      // fires before every model call — we swap the model based on DMR routing
+      "chat.params": async (ctx, params) => {
+        const prompt = extractPrompt(ctx.messages ?? []);
+        if (!prompt || prompt.startsWith("~")) return params;
+        const config = loadConfig();
+        const mode = getEffectiveMode(process.cwd(), config.mode);
+        if (mode === "off") return params;
+        const decision = route(prompt, config);
+        const provider = process.env.DMR_PROVIDER ?? "anthropic";
+        const modelIds = getModelIds(provider);
+        const modelId = modelIds[decision.model];
+        const label = `[DMR] ${decision.model} \u2192 ${modelId} (${(decision.confidence * 100).toFixed(0)}% confidence)`;
+        if (config.showReason) console.log(`${label}
+  reason: ${decision.reason}`);
+        else console.log(label);
+        return { ...params, model: modelId };
       }
     }
-  } catch {
-    process.exit(0);
-  }
-  if (prompt.startsWith("~")) process.exit(0);
-  const config = loadConfig();
-  const mode = getEffectiveMode(process.cwd(), config.mode);
-  if (mode === "off") process.exit(0);
-  let decision = route(prompt, config);
-  if (config.useLLMFallback && decision.confidence < config.autoModeMinConfidence) {
-    const llmDecision = await classifyWithLLM(prompt, config);
-    if (llmDecision) decision = llmDecision;
-  }
-  const modelId = CLAUDE_MODEL_IDS[decision.model];
-  const lines = [
-    `\u2554\u2550 DMR (${mode}) \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2557`,
-    `  Model:      ${decision.model} (${modelId})`,
-    `  Effort:     ${decision.effort}`,
-    `  Confidence: ${(decision.confidence * 100).toFixed(0)}%`,
-    ...config.showReason ? [`  Reason:     ${decision.reason}`] : [],
-    `\u255A\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u255D`
-  ];
-  console.log(lines.join("\n"));
-  process.exit(0);
+  };
 }
-main().catch(() => process.exit(0));
+export {
+  dmrPlugin as default
+};

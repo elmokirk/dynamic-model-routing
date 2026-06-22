@@ -5,34 +5,48 @@ import { join } from "path";
 
 // src/types.ts
 var CODEX_MODEL_IDS = {
-  haiku: "gpt-5.4-mini",
-  sonnet: "gpt-5.4",
-  opus: "gpt-5.5"
+  low: "gpt-5.4-mini",
+  mid: "gpt-5.4",
+  high: "gpt-5.5",
+  max: "gpt-5.5"
+  // map to flagship until o-series lands in Codex CLI
+};
+var OLLAMA_MODEL_IDS = {
+  low: process.env.DMR_OLLAMA_LOW ?? "qwen2.5-coder:7b",
+  mid: process.env.DMR_OLLAMA_MID ?? "qwen2.5-coder:32b",
+  high: process.env.DMR_OLLAMA_HIGH ?? "qwen3-coder:30b",
+  max: process.env.DMR_OLLAMA_MAX ?? "kimi-k2.6:cloud"
 };
 var DEFAULT_CONFIG = {
   mode: "confirm",
-  defaultModel: "sonnet",
+  defaultModel: "mid",
   defaultEffort: "medium",
-  allowedModels: ["haiku", "sonnet", "opus"],
+  allowedModels: ["low", "mid", "high"],
+  // max is opt-in
   autoModeMinConfidence: 0.75,
   useLLMFallback: false,
-  llmClassifierModel: "haiku",
+  llmClassifierModel: "low",
   showReason: true,
   logDecisions: true,
   writeClaudeSettings: false,
   rules: {
-    opus: {
+    high: {
       keywords: ["architecture", "strategy", "multi-file", "complex debug", "system design", "refactor across", "ambiguous", "high-impact", "at scale", "design a system", "design the system"],
       effort: "high"
     },
-    sonnet: {
+    mid: {
       keywords: ["implement", "fix", "test", "refactor", "component", "bugfix", "add feature", "write"],
       effort: "medium"
     },
-    haiku: {
+    low: {
       keywords: ["summarize", "explain briefly", "format", "rename", "simple", "what is", "what does", "list", "show me", "what error", "error mean"],
       effort: "low"
     }
+    // max tier — opt-in, add to allowedModels to enable:
+    // max: {
+    //   keywords: ['security audit', 'full codebase', 'entire codebase', 'greenfield', 'migrate everything'],
+    //   effort: 'max',
+    // },
   }
 };
 
@@ -86,7 +100,7 @@ function score(prompt, keywords) {
   return { score: matched.length, matched };
 }
 function route(prompt, config) {
-  const models = ["opus", "sonnet", "haiku"];
+  const models = ["max", "high", "mid", "low"].filter((m) => config.allowedModels.includes(m) && config.rules[m] != null);
   const scores = models.map((model) => {
     const rule = config.rules[model];
     const { score: s, matched } = score(prompt, rule.keywords);

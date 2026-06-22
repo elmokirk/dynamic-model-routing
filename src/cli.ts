@@ -51,13 +51,13 @@ async function cmdRun(prompt: string) {
   // confirm mode
   const rl = createInterface({ input: process.stdin, output: process.stdout })
   await new Promise<void>(resolve => {
-    rl.question('  [Enter] accept / h haiku / s sonnet / o opus / c cancel: ', answer => {
+    rl.question('  [Enter] accept / l low / m mid / h high / x max / c cancel: ', answer => {
       rl.close()
       const key = answer.trim().toLowerCase()
-      const overrides: Record<string, Model> = { h: 'haiku', s: 'sonnet', o: 'opus' }
+      const overrides: Record<string, Model> = { l: 'low', m: 'mid', h: 'high', x: 'max' }
       if (key === 'c') { console.log('[DMR] Cancelled.'); resolve(); return }
       const model: Model = overrides[key] ?? decision.model
-      const effort: Effort = overrides[key] ? config.rules[model].effort : decision.effort
+      const effort: Effort = overrides[key] ? (config.rules[model]?.effort ?? config.defaultEffort) : decision.effort
       const modelId = MODEL_IDS[model]
       const cmd = `claude --model ${modelId} --effort ${effort} "${prompt.replace(/"/g, '\\"')}"`
       console.log(`\n[DMR] Running: ${cmd}\n`)

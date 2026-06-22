@@ -16,19 +16,19 @@ heavy usage. GPU time is the billing unit — not tokens.
 
 | Rank | Model | Tag | Tier | Speed | Best For |
 |------|-------|-----|------|-------|----------|
-| 1 | **Kimi K2.6** | `kimi-k2.6:cloud` | opus | 106 t/s | Architecture, long-horizon coding, swarm orchestration (up to 300 sub-agents), multimodal input, 256K context |
-| 2 | **DeepSeek V4 Pro** | `deepseek-v4-pro:cloud` | opus | ~38 t/s | Deep reasoning, complex multi-step coding, research-quality answers |
-| 3 | **GLM-5.1** | `glm-5.1:cloud` | sonnet/opus | ~52 t/s | Code generation, Chinese + English, output-heavy tasks (note: highest output cost of the three) |
-| 4 | **MiniMax** | `minimax:cloud` | sonnet | fast | Balanced general coding, long context, cost-effective on Pro tier |
-| 5 | **GPT-OSS 20B** | `gpt-oss:20b` | sonnet | 136 t/s | Fastest cloud model, MoE architecture — ideal for rapid iteration |
+| 1 | **Kimi K2.6** | `kimi-k2.6:cloud` | high | 106 t/s | Architecture, long-horizon coding, swarm orchestration (up to 300 sub-agents), multimodal input, 256K context |
+| 2 | **DeepSeek V4 Pro** | `deepseek-v4-pro:cloud` | high | ~38 t/s | Deep reasoning, complex multi-step coding, research-quality answers |
+| 3 | **GLM-5.1** | `glm-5.1:cloud` | mid/high | ~52 t/s | Code generation, Chinese + English, output-heavy tasks (note: highest output cost of the three) |
+| 4 | **MiniMax** | `minimax:cloud` | mid | fast | Balanced general coding, long context, cost-effective on Pro tier |
+| 5 | **GPT-OSS 20B** | `gpt-oss:20b` | mid | 136 t/s | Fastest cloud model, MoE architecture — ideal for rapid iteration |
 
 ### DMR Cloud Tier Mapping
 
 ```typescript
 export const OLLAMA_CLOUD_MODEL_IDS: Record<Model, string> = {
-  haiku:  'gpt-oss:20b',         // fast, MoE, great for mechanical tasks
-  sonnet: 'glm-5.1:cloud',       // strong code generation
-  opus:   'kimi-k2.6:cloud',     // best overall, multimodal, 256K context
+  low:  'gpt-oss:20b',         // fast, MoE, great for mechanical tasks
+  mid: 'glm-5.1:cloud',       // strong code generation
+  high:   'kimi-k2.6:cloud',     // best overall, multimodal, 256K context
 }
 ```
 
@@ -64,7 +64,7 @@ Rule of thumb: model fits if Q4_K_M file size + ~1.5 GB ≤ your VRAM.
 
 **DMR mapping for 8GB:**
 ```typescript
-{ haiku: 'phi4-mini', sonnet: 'qwen2.5-coder:7b', opus: 'deepseek-r1:7b' }
+{ low: 'phi4-mini', mid: 'qwen2.5-coder:7b', high: 'deepseek-r1:7b' }
 ```
 
 ---
@@ -81,7 +81,7 @@ Rule of thumb: model fits if Q4_K_M file size + ~1.5 GB ≤ your VRAM.
 
 **DMR mapping for 16GB:**
 ```typescript
-{ haiku: 'qwen3:14b', sonnet: 'deepseek-coder-v2:16b', opus: 'deepseek-r1:14b' }
+{ low: 'qwen3:14b', mid: 'deepseek-coder-v2:16b', high: 'deepseek-r1:14b' }
 ```
 
 ---
@@ -98,7 +98,7 @@ Rule of thumb: model fits if Q4_K_M file size + ~1.5 GB ≤ your VRAM.
 
 **DMR mapping for 24GB:**
 ```typescript
-{ haiku: 'qwen3.6:27b', sonnet: 'qwen2.5-coder:32b', opus: 'qwen3-coder:30b' }
+{ low: 'qwen3.6:27b', mid: 'qwen2.5-coder:32b', high: 'qwen3-coder:30b' }
 ```
 
 ---
@@ -115,9 +115,9 @@ Rule of thumb: model fits if Q4_K_M file size + ~1.5 GB ≤ your VRAM.
 
 **DMR mapping for 32GB+:**
 ```typescript
-{ haiku: 'qwen3:32b', sonnet: 'devstral-small-2', opus: 'qwen3:32b' }
+{ low: 'qwen3:32b', mid: 'devstral-small-2', high: 'qwen3:32b' }
 // or go larger:
-{ haiku: 'qwen2.5-coder:7b', sonnet: 'qwen3:32b', opus: 'llama3.3:70b' }
+{ low: 'qwen2.5-coder:7b', mid: 'qwen3:32b', high: 'llama3.3:70b' }
 ```
 
 ---
@@ -137,9 +137,9 @@ Or override model IDs in `.claude/dynamic-model-routing.json`:
 ```json
 {
   "ollamaModelIds": {
-    "haiku":  "qwen3:14b",
-    "sonnet": "deepseek-coder-v2:16b",
-    "opus":   "deepseek-r1:14b"
+    "low":  "qwen3:14b",
+    "mid": "deepseek-coder-v2:16b",
+    "high":   "deepseek-r1:14b"
   }
 }
 ```
@@ -155,5 +155,5 @@ Or override model IDs in `.claude/dynamic-model-routing.json`:
 | Best model quality | Kimi K2.6 (1T params) | qwen2.5-coder:32b |
 | Cost | Free tier available | Hardware only |
 | Privacy | Ollama infra (strong policy, no audit cert) | 100% local |
-| Speed (haiku tasks) | ~136 t/s (gpt-oss) | ~80 t/s (local 7B) |
+| Speed (low tasks) | ~136 t/s (gpt-oss) | ~80 t/s (local 7B) |
 | Context | 256K (Kimi K2.6) | 128K typical |
