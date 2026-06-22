@@ -5,6 +5,7 @@ import { homedir } from 'os'
 type Target = 'global' | 'project' | 'local'
 
 const DMR_HOOK_ID = 'dmr-model-router'
+const DMR_SESSION_HOOK_ID = 'dmr-session-start'
 
 function targetPath(target: Target, cwd: string): string {
   if (target === 'global') return join(homedir(), '.claude', 'settings.json')
@@ -22,12 +23,14 @@ export function installHook(target: Target = 'project', pluginRoot: string, cwd 
 
   const settings = readSettings(settingsPath)
   const hooks = (settings.hooks as Record<string, unknown[]> | undefined) ?? {}
-  const existing = (hooks['UserPromptSubmit'] as unknown[]) ?? []
 
-  const alreadyInstalled = existing.some(
-    (h: unknown) => (h as { id?: string }).id === DMR_HOOK_ID
-  )
-  if (alreadyInstalled) return `Hook already installed in ${settingsPath}`
+  const existing = (hooks['UserPromptSubmit'] as unknown[]) ?? []
+  const alreadyInstalled = existing.some((h: unknown) => (h as { id?: string }).id === DMR_HOOK_ID)
+
+  const sessionHooks = (hooks['SessionStart'] as unknown[]) ?? []
+  const sessionAlready = sessionHooks.some((h: unknown) => (h as { id?: string }).id === DMR_SESSION_HOOK_ID)
+
+  if (alreadyInstalled && sessionAlready) return `DMR hooks already installed in ${settingsPath}`
 
   const hookEntry = {
     id: DMR_HOOK_ID,
@@ -37,7 +40,20 @@ export function installHook(target: Target = 'project', pluginRoot: string, cwd 
     description: 'DMR: recommend model and effort before each turn',
   }
 
-  settings.hooks = { ...hooks, UserPromptSubmit: [...existing, hookEntry] }
+  const sessionEntry = {
+    id: DMR_SESSION_HOOK_ID,
+    type: 'command',
+    command: `node "${pluginRoot}/dist/session-start.js"`,
+    async: false,
+    description: 'DMR: inject sub-agent model routing rules at session start',
+  }
+
+  settings.hooks = {
+    ...hooks,
+    SessionStart: sessionAlready ? sessionHooks : [...sessionHooks, sessionEntry],
+    UserPromptSubmit: alreadyInstalled ? existing : [...existing, hookEntry],
+  }
+
   writeFileSync(settingsPath, JSON.stringify(settings, null, 2))
-  return `DMR hook installed → ${settingsPath}`
+  return `DMR hooks installed → ${settingsPath}`
 }

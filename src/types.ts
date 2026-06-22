@@ -38,6 +38,18 @@ export interface SessionState {
   updatedAt: string
 }
 
+export const CLAUDE_MODEL_IDS: Record<Model, string> = {
+  haiku: 'claude-haiku-4-5-20251001',
+  sonnet: 'claude-sonnet-4-6',
+  opus: 'claude-opus-4-8',
+}
+
+export const CODEX_MODEL_IDS: Record<Model, string> = {
+  haiku: 'gpt-5.4-mini',
+  sonnet: 'gpt-5.4',
+  opus: 'gpt-5.5',
+}
+
 export const DEFAULT_CONFIG: DmrConfig = {
   mode: 'confirm',
   defaultModel: 'sonnet',

@@ -1,8 +1,7 @@
 import { loadConfig } from './config.js'
 import { getEffectiveMode } from './session.js'
 import { route } from './router.js'
-import { classifyWithLLM } from './classifier.js'
-import { CLAUDE_MODEL_IDS } from './types.js'
+import { CODEX_MODEL_IDS } from './types.js'
 
 async function main() {
   let prompt = ''
@@ -29,19 +28,12 @@ async function main() {
 
   if (mode === 'off') process.exit(0)
 
-  let decision = route(prompt, config)
-
-  if (config.useLLMFallback && decision.confidence < config.autoModeMinConfidence) {
-    const llmDecision = await classifyWithLLM(prompt, config)
-    if (llmDecision) decision = llmDecision
-  }
-
-  const modelId = CLAUDE_MODEL_IDS[decision.model]
+  const decision = route(prompt, config)
+  const modelId = CODEX_MODEL_IDS[decision.model]
 
   const lines = [
     `╔═ DMR (${mode}) ══════════════════════╗`,
     `  Model:      ${decision.model} (${modelId})`,
-    `  Effort:     ${decision.effort}`,
     `  Confidence: ${(decision.confidence * 100).toFixed(0)}%`,
     ...(config.showReason ? [`  Reason:     ${decision.reason}`] : []),
     `╚═══════════════════════════════════════╝`,

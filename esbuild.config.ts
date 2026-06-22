@@ -25,4 +25,14 @@ await Promise.all([
     entryPoints: ['src/session-start.ts'],
     outfile: 'dist/session-start.js',
   }),
+  esbuild.build({
+    ...shared,
+    entryPoints: ['src/codex-hook.ts'],
+    outfile: 'dist/codex-hook.js',
+  }),
+  esbuild.build({
+    ...shared,
+    entryPoints: ['src/codex-session-start.ts'],
+    outfile: 'dist/codex-session-start.js',
+  }),
 ])

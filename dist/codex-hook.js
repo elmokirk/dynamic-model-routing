@@ -4,10 +4,10 @@ import { homedir } from "os";
 import { join } from "path";
 
 // src/types.ts
-var CLAUDE_MODEL_IDS = {
-  haiku: "claude-haiku-4-5-20251001",
-  sonnet: "claude-sonnet-4-6",
-  opus: "claude-opus-4-8"
+var CODEX_MODEL_IDS = {
+  haiku: "gpt-5.4-mini",
+  sonnet: "gpt-5.4",
+  opus: "gpt-5.5"
 };
 var DEFAULT_CONFIG = {
   mode: "confirm",
@@ -114,32 +114,7 @@ function route(prompt, config) {
   };
 }
 
-// src/classifier.ts
-import Anthropic from "@anthropic-ai/sdk";
-var MODEL_IDS = {
-  haiku: "claude-haiku-4-5-20251001",
-  sonnet: "claude-sonnet-4-6",
-  opus: "claude-opus-4-8"
-};
-var SYSTEM = `You are a model routing classifier. Given a user prompt, output ONLY valid JSON matching this exact schema \u2014 no prose, no markdown:
-{"model":"haiku|sonnet|opus","effort":"low|medium|high|xhigh","confidence":0.0,"reason":"string","signals":["string"]}`;
-async function classifyWithLLM(prompt, config) {
-  try {
-    const client = new Anthropic();
-    const res = await client.messages.create({
-      model: MODEL_IDS[config.llmClassifierModel],
-      max_tokens: 200,
-      system: SYSTEM,
-      messages: [{ role: "user", content: prompt }]
-    });
-    const text = res.content[0].type === "text" ? res.content[0].text.trim() : "";
-    return JSON.parse(text);
-  } catch {
-    return null;
-  }
-}
-
-// src/hook.ts
+// src/codex-hook.ts
 async function main() {
   let prompt = "";
   try {
@@ -161,16 +136,11 @@ async function main() {
   const config = loadConfig();
   const mode = getEffectiveMode(process.cwd(), config.mode);
   if (mode === "off") process.exit(0);
-  let decision = route(prompt, config);
-  if (config.useLLMFallback && decision.confidence < config.autoModeMinConfidence) {
-    const llmDecision = await classifyWithLLM(prompt, config);
-    if (llmDecision) decision = llmDecision;
-  }
-  const modelId = CLAUDE_MODEL_IDS[decision.model];
+  const decision = route(prompt, config);
+  const modelId = CODEX_MODEL_IDS[decision.model];
   const lines = [
     `\u2554\u2550 DMR (${mode}) \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2557`,
     `  Model:      ${decision.model} (${modelId})`,
-    `  Effort:     ${decision.effort}`,
     `  Confidence: ${(decision.confidence * 100).toFixed(0)}%`,
     ...config.showReason ? [`  Reason:     ${decision.reason}`] : [],
     `\u255A\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u255D`

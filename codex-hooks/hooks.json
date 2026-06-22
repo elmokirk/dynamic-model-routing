@@ -1,0 +1,22 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "id": "dmr-session-start",
+        "type": "command",
+        "command": "node \"${CODEX_PLUGIN_ROOT}/dist/codex-session-start.js\"",
+        "async": false,
+        "description": "DMR: inject sub-agent model routing rules at session start"
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "id": "dmr-model-router",
+        "type": "command",
+        "command": "node \"${CODEX_PLUGIN_ROOT}/dist/codex-hook.js\"",
+        "async": false,
+        "description": "DMR: recommend model before each prompt"
+      }
+    ]
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "name": "dynamic-model-routing",
+  "version": "0.1.0",
+  "description": "Recommend or auto-select the best OpenAI model for every prompt — zero API calls, ~7µs per decision",
+  "author": { "name": "Kirk" },
+  "homepage": "https://github.com/yourname/cc-dynamic-model-routing",
+  "repository": "https://github.com/yourname/cc-dynamic-model-routing",
+  "license": "MIT",
+  "keywords": ["routing", "model-selection", "productivity", "gpt-5", "cost-optimization"]
+}

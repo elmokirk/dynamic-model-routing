@@ -152,6 +152,7 @@ import { readFileSync as readFileSync3, writeFileSync as writeFileSync2, mkdirSy
 import { join as join3 } from "path";
 import { homedir as homedir2 } from "os";
 var DMR_HOOK_ID = "dmr-model-router";
+var DMR_SESSION_HOOK_ID = "dmr-session-start";
 function targetPath(target, cwd) {
   if (target === "global") return join3(homedir2(), ".claude", "settings.json");
   if (target === "project") return join3(cwd, ".claude", "settings.json");
@@ -170,10 +171,10 @@ function installHook(target = "project", pluginRoot, cwd = process.cwd()) {
   const settings = readSettings(settingsPath);
   const hooks = settings.hooks ?? {};
   const existing = hooks["UserPromptSubmit"] ?? [];
-  const alreadyInstalled = existing.some(
-    (h) => h.id === DMR_HOOK_ID
-  );
-  if (alreadyInstalled) return `Hook already installed in ${settingsPath}`;
+  const alreadyInstalled = existing.some((h) => h.id === DMR_HOOK_ID);
+  const sessionHooks = hooks["SessionStart"] ?? [];
+  const sessionAlready = sessionHooks.some((h) => h.id === DMR_SESSION_HOOK_ID);
+  if (alreadyInstalled && sessionAlready) return `DMR hooks already installed in ${settingsPath}`;
   const hookEntry = {
     id: DMR_HOOK_ID,
     type: "command",
@@ -181,9 +182,20 @@ function installHook(target = "project", pluginRoot, cwd = process.cwd()) {
     async: false,
     description: "DMR: recommend model and effort before each turn"
   };
-  settings.hooks = { ...hooks, UserPromptSubmit: [...existing, hookEntry] };
+  const sessionEntry = {
+    id: DMR_SESSION_HOOK_ID,
+    type: "command",
+    command: `node "${pluginRoot}/dist/session-start.js"`,
+    async: false,
+    description: "DMR: inject sub-agent model routing rules at session start"
+  };
+  settings.hooks = {
+    ...hooks,
+    SessionStart: sessionAlready ? sessionHooks : [...sessionHooks, sessionEntry],
+    UserPromptSubmit: alreadyInstalled ? existing : [...existing, hookEntry]
+  };
   writeFileSync2(settingsPath, JSON.stringify(settings, null, 2));
-  return `DMR hook installed \u2192 ${settingsPath}`;
+  return `DMR hooks installed \u2192 ${settingsPath}`;
 }
 
 // src/cli.ts
