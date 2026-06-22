@@ -21,6 +21,8 @@ async function main() {
     process.exit(0)
   }
 
+  if (prompt.startsWith('~')) process.exit(0)
+
   const config = loadConfig()
   const mode = getEffectiveMode(process.cwd(), config.mode)
 

@@ -152,6 +152,7 @@ async function main() {
   } catch {
     process.exit(0);
   }
+  if (prompt.startsWith("~")) process.exit(0);
   const config = loadConfig();
   const mode = getEffectiveMode(process.cwd(), config.mode);
   if (mode === "off") process.exit(0);
