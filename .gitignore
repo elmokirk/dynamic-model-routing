@@ -1,3 +1,4 @@
 node_modules/
 *.local.json
 .claude/dmr-session.json
+.claude/settings.json
