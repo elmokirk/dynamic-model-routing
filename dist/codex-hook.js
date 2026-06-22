@@ -15,7 +15,7 @@ var OLLAMA_MODEL_IDS = {
   low: process.env.DMR_OLLAMA_LOW ?? "qwen2.5-coder:7b",
   mid: process.env.DMR_OLLAMA_MID ?? "qwen2.5-coder:32b",
   high: process.env.DMR_OLLAMA_HIGH ?? "qwen3-coder:30b",
-  max: process.env.DMR_OLLAMA_MAX ?? "kimi-k2.6:cloud"
+  max: process.env.DMR_OLLAMA_MAX ?? "deepseek-v4-pro:cloud"
 };
 var DEFAULT_CONFIG = {
   mode: "confirm",

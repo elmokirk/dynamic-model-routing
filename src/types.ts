@@ -63,11 +63,12 @@ export const OPENAI_MODEL_IDS: Record<Model, string> = {
 
 // Ollama local models — defaults to 16-24GB sweet spot
 // Override via DMR_OLLAMA_LOW / _MID / _HIGH / _MAX env vars
+// For cloud: set env vars to e.g. deepseek-v4-flash:cloud / minimax-m3:cloud / kimi-k2.6:cloud / deepseek-v4-pro:cloud
 export const OLLAMA_MODEL_IDS: Record<Model, string> = {
   low:  process.env.DMR_OLLAMA_LOW  ?? 'qwen2.5-coder:7b',
   mid:  process.env.DMR_OLLAMA_MID  ?? 'qwen2.5-coder:32b',
   high: process.env.DMR_OLLAMA_HIGH ?? 'qwen3-coder:30b',
-  max:  process.env.DMR_OLLAMA_MAX  ?? 'kimi-k2.6:cloud',
+  max:  process.env.DMR_OLLAMA_MAX  ?? 'deepseek-v4-pro:cloud',
 }
 
 export const DEFAULT_CONFIG: DmrConfig = {

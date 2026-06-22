@@ -12,23 +12,24 @@ Run cloud models without downloading weights: `ollama run <model>:cloud`
 Requires `ollama signin`. Free tier available; Pro ($20/mo) and Max ($100/mo) for
 heavy usage. GPU time is the billing unit — not tokens.
 
-### Top 5 Cloud Models
+### Top 5 Cloud Models (Feb–June 2026)
 
-| Rank | Model | Tag | Tier | Speed | Best For |
-|------|-------|-----|------|-------|----------|
-| 1 | **Kimi K2.6** | `kimi-k2.6:cloud` | high | 106 t/s | Architecture, long-horizon coding, swarm orchestration (up to 300 sub-agents), multimodal input, 256K context |
-| 2 | **DeepSeek V4 Pro** | `deepseek-v4-pro:cloud` | high | ~38 t/s | Deep reasoning, complex multi-step coding, research-quality answers |
-| 3 | **GLM-5.1** | `glm-5.1:cloud` | mid/high | ~52 t/s | Code generation, Chinese + English, output-heavy tasks (note: highest output cost of the three) |
-| 4 | **MiniMax** | `minimax:cloud` | mid | fast | Balanced general coding, long context, cost-effective on Pro tier |
-| 5 | **GPT-OSS 20B** | `gpt-oss:20b` | mid | 136 t/s | Fastest cloud model, MoE architecture — ideal for rapid iteration |
+| Rank | Model | Released | Tag | DMR Tier | SWE-Bench | Best For |
+|------|-------|----------|-----|----------|-----------|----------|
+| 1 | **DeepSeek V4 Pro** | Apr 23 2026 | `deepseek-v4-pro:cloud` | max | 93.5% LiveCodeBench | Raw coding power, algorithmic problems, 1.6T params / 49B active, 1M ctx |
+| 2 | **GLM-5.2** | Jun 2026 | `glm-5.2:cloud` | high | 79.65 Coding Avg (SOTA open-source) | Strongest agentic coding — beats all proprietary on LiveBench agentic |
+| 3 | **Kimi K2.6** | Apr 20 2026 | `kimi-k2.6:cloud` | high | 80.2% Verified | Long-horizon agents (up to 300 sub-agents), multimodal, 256K ctx, 1T params |
+| 4 | **MiniMax M3** | Jun 2026 | `minimax-m3:cloud` | mid | — | 1M context, native vision, solid agent stability, cost-effective on Pro |
+| 5 | **DeepSeek V4 Flash** | Apr 23 2026 | `deepseek-v4-flash:cloud` | low | — | Fast lightweight sibling of V4 Pro (284B/13B active), good for quick tasks |
 
 ### DMR Cloud Tier Mapping
 
 ```typescript
 export const OLLAMA_CLOUD_MODEL_IDS: Record<Model, string> = {
-  low:  'gpt-oss:20b',         // fast, MoE, great for mechanical tasks
-  mid: 'glm-5.1:cloud',       // strong code generation
-  high:   'kimi-k2.6:cloud',     // best overall, multimodal, 256K context
+  low:  'deepseek-v4-flash:cloud',  // fast, 13B active, great for low/mid tasks
+  mid:  'minimax-m3:cloud',         // 1M ctx, vision, stable for standard work
+  high: 'kimi-k2.6:cloud',          // best long-horizon agents, 256K ctx
+  max:  'deepseek-v4-pro:cloud',    // strongest raw coding, 93.5% LiveCodeBench
 }
 ```
 
@@ -36,12 +37,15 @@ export const OLLAMA_CLOUD_MODEL_IDS: Record<Model, string> = {
 
 | Model | Input (per 1M) | Output (per 1M) | Notes |
 |-------|---------------|----------------|-------|
-| Kimi K2.6 | $0.15 | $4.00 | Best value at this quality tier |
-| DeepSeek V4 Pro | $1.74 | $3.48 | Higher input cost, slower |
-| GLM-5.1 | $1.40 | $4.40 | Most expensive output |
+| DeepSeek V4 Pro | $1.74 | $3.48 | Post-discount price (was 75% off until May 31) |
+| DeepSeek V4 Flash | ~$0.40 | ~$1.00 | Estimated — faster/cheaper sibling |
+| GLM-5.2 | $1.40 | $4.40 | Highest output cost but strongest agentic |
+| Kimi K2.6 | $0.15 | $4.00 | Cheapest input of the top tier |
+| MiniMax M3 | ~$0.60 | ~$2.00 | Estimated — best context/cost ratio |
 
 > Ollama Cloud billing is GPU-time based, not per-token — actual costs depend on
 > your subscription tier and session length, not the API prices above.
+> ⚠️ Review data policies for Chinese vendors before using for enterprise/compliance work.
 
 ---
 
