@@ -3,8 +3,8 @@
   "version": "0.3.0",
   "description": "Recommend or auto-select the best OpenAI model tier (low/mid/high/max) for every prompt — zero API calls, ~7µs per decision",
   "author": { "name": "Kirk" },
-  "homepage": "https://github.com/elmokirk/cc-dynamic-model-routing",
-  "repository": "https://github.com/elmokirk/cc-dynamic-model-routing",
+  "homepage": "https://github.com/elmokirk/dynamic-model-routing",
+  "repository": "https://github.com/elmokirk/dynamic-model-routing",
   "license": "MIT",
   "keywords": ["routing", "model-selection", "productivity", "gpt", "cost-optimization"]
 }
